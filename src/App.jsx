@@ -12,7 +12,10 @@ function App() {
         area: 1200,
         distance: 5,
         infra: 7,
-        soil: 5
+        soil: 5,
+        nitrogen: 45,
+        phosphorus: 30,
+        potassium: 25
     });
 
     const [isPredicting, setIsPredicting] = useState(false);

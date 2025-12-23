@@ -100,7 +100,7 @@ export const LandInputs = ({ details, setDetails }) => {
 
             {details.type === 'Rural' && (
                 <LandInput
-                    label="Soil Quality Index"
+                    label="Overall Soil Health"
                     icon={Droplets}
                     value={details.soil}
                     unit="/ 10"

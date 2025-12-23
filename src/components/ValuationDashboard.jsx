@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Database, Cpu, Zap, TrendingUp, CheckCircle, ArrowRight, Activity, Sparkles } from 'lucide-react';
+import { Database, Cpu, Zap, TrendingUp, CheckCircle, ArrowRight, Activity, Sparkles, FlaskConical, Atom, ShieldCheck, Microscope } from 'lucide-react';
 import { formatRupee, CurrencyDisplay } from './CurrencyDisplay';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
@@ -27,8 +27,17 @@ export const ValuationDashboard = ({ landDetails, isPredicting }) => {
     const rawPrice = landDetails.area * baseRate;
     const distanceFactor = Math.max(0.2, (100 - landDetails.distance) / 100);
     const infraFactor = 1 + (landDetails.infra / 10);
-    const mlPrice = rawPrice * distanceFactor * infraFactor;
+
+    // Agriculture value factor based on NPK
+    const nutritionFactor = landDetails.type === 'Rural'
+        ? 1 + ((landDetails.nitrogen + landDetails.phosphorus + landDetails.potassium) / 300)
+        : 1;
+
+    const mlPrice = rawPrice * distanceFactor * infraFactor * nutritionFactor;
     const finalPrice = mlPrice * 1.15; // GenAI premium
+
+    const [simulatedNPK, setSimulatedNPK] = useState({ n: 45, p: 32, k: 28 });
+    const [soilReview, setSoilReview] = useState('');
 
     useEffect(() => {
         if (isPredicting) {
@@ -37,6 +46,18 @@ export const ValuationDashboard = ({ landDetails, isPredicting }) => {
                 if (stage < 2) {
                     stage++;
                     setActiveStage(stage);
+                    if (stage === 1 && landDetails.type === 'Rural') {
+                        // Generate random but realistic NPK on "ML stage"
+                        const n = Math.floor(Math.random() * 40) + 30;
+                        const p = Math.floor(Math.random() * 30) + 20;
+                        const k = Math.floor(Math.random() * 30) + 20;
+                        setSimulatedNPK({ n, p, k });
+
+                        // Generate AI Review
+                        if (n > 60) setSoilReview("High Nitrogen detected. Exceptional for leafy green production and overall biomass.");
+                        else if (p > 40) setSoilReview("Phosphorus rich soil. Ideal for root development and flowering plants.");
+                        else setSoilReview("Balanced mineral composition. Highly resilient soil suitable for diverse multi-cropping.");
+                    }
                 } else {
                     clearInterval(interval);
                 }
@@ -45,7 +66,7 @@ export const ValuationDashboard = ({ landDetails, isPredicting }) => {
         } else {
             setActiveStage(0);
         }
-    }, [isPredicting]);
+    }, [isPredicting, landDetails.type]);
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
@@ -107,30 +128,69 @@ export const ValuationDashboard = ({ landDetails, isPredicting }) => {
                 </div>
 
                 {/* Trend Visualization */}
-                <div className="glass-card" style={{ padding: '2rem' }}>
-                    <h4 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <TrendingUp size={18} color="var(--primary)" />
-                        Market Value Projection
-                    </h4>
-                    <div style={{ width: '100%', height: '250px' }}>
-                        <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart data={mockHistoricalData}>
-                                <defs>
-                                    <linearGradient id="colorPrice" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
-                                        <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
-                                    </linearGradient>
-                                </defs>
-                                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                                <XAxis dataKey="name" stroke="var(--text-muted)" fontSize={12} />
-                                <YAxis hide />
-                                <Tooltip
-                                    contentStyle={{ background: '#111827', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }}
-                                    formatter={(value) => formatRupee(value)}
-                                />
-                                <Area type="monotone" dataKey="price" stroke="#6366f1" strokeWidth={3} fillOpacity={1} fill="url(#colorPrice)" />
-                            </AreaChart>
-                        </ResponsiveContainer>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+                    {landDetails.type === 'Rural' && activeStage >= 1 && (
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="glass-card"
+                            style={{ padding: '2rem' }}
+                        >
+                            <h4 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <Microscope size={18} color="var(--accent)" />
+                                Soil Nutrition Scan Result
+                            </h4>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
+                                <div style={{ textAlign: 'center' }}>
+                                    <FlaskConical size={20} color="#34d399" style={{ marginBottom: '0.25rem' }} />
+                                    <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Nitrogen (N)</p>
+                                    <p style={{ fontWeight: 800 }}>{simulatedNPK.n}%</p>
+                                </div>
+                                <div style={{ textAlign: 'center' }}>
+                                    <Atom size={20} color="#fbbf24" style={{ marginBottom: '0.25rem' }} />
+                                    <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Phosphorus (P)</p>
+                                    <p style={{ fontWeight: 800 }}>{simulatedNPK.p}%</p>
+                                </div>
+                                <div style={{ textAlign: 'center' }}>
+                                    <ShieldCheck size={20} color="#60a5fa" style={{ marginBottom: '0.25rem' }} />
+                                    <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Potassium (K)</p>
+                                    <p style={{ fontWeight: 800 }}>{simulatedNPK.k}%</p>
+                                </div>
+                            </div>
+                            <div style={{ background: 'rgba(34, 211, 238, 0.05)', padding: '1rem', borderRadius: '0.5rem', borderLeft: '3px solid var(--accent)' }}>
+                                <p style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--accent)', marginBottom: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                    <Sparkles size={12} /> AI SOIL REVIEW
+                                </p>
+                                <p style={{ fontSize: '0.85rem', color: 'var(--text-main)', fontStyle: 'italic' }}>"{soilReview}"</p>
+                            </div>
+                        </motion.div>
+                    )}
+
+                    <div className="glass-card" style={{ padding: '2rem', flex: 1 }}>
+                        <h4 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <TrendingUp size={18} color="var(--primary)" />
+                            Market Value Projection
+                        </h4>
+                        <div style={{ width: '100%', height: '250px' }}>
+                            <ResponsiveContainer width="100%" height="100%">
+                                <AreaChart data={mockHistoricalData}>
+                                    <defs>
+                                        <linearGradient id="colorPrice" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
+                                            <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+                                        </linearGradient>
+                                    </defs>
+                                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                                    <XAxis dataKey="name" stroke="var(--text-muted)" fontSize={12} />
+                                    <YAxis hide />
+                                    <Tooltip
+                                        contentStyle={{ background: '#111827', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }}
+                                        formatter={(value) => formatRupee(value)}
+                                    />
+                                    <Area type="monotone" dataKey="price" stroke="#6366f1" strokeWidth={3} fillOpacity={1} fill="url(#colorPrice)" />
+                                </AreaChart>
+                            </ResponsiveContainer>
+                        </div>
                     </div>
                 </div>
             </div>
